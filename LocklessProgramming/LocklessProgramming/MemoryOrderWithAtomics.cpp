@@ -24,6 +24,8 @@
 		//for consume and acquire loads, these store operations are considered releasing operations
 		//All C++11 Atomics use this as the default
 
+//This can be
+
 //The really important ones are below:
 	//std::memory_order_acquire
 	//std::memory_order_release
@@ -65,6 +67,7 @@ static void fun()
 
 
 	//Is the below true????
+				//Pretty sure
 
 	//Lets cover the easiest one to talk about - std::memory_order_relaxed
 		//This memory order literally means that you don't care about that atomics memory ordering
@@ -73,4 +76,7 @@ static void fun()
 			temp = num1.load(std::memory_order_relaxed);
 			temp = num2.load(std::memory_order_acquire);
 			//There is no reason to put std::memory_order_acquire on num1's load, since num2's load guarantees that num2's load will happen once all accesses to memory have happened (aka num1's load)
+
+	//Overall the above is showing off the acquire and release semantics
+	//To see how to use them in action: http://preshing.com/20121019/this-is-why-they-call-it-a-weakly-ordered-cpu/
 }

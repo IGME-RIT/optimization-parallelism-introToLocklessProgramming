@@ -47,6 +47,9 @@ Description:
 //https://en.wikipedia.org/wiki/ABA_problem
 //http://www.gamedev.net/topic/667092-the-atomic-man-are-lockless-data-structures-really-worth-learning-about/
 
+//Before we start, it is important that you read the Introduction to Inline Assembly Tutorial, so you have a basic understanding of assembly
+	//It is important, so you can handle/check memory reordering in a real time context
+
 //Don't use lockless programming unless you NEED the performance and the scalability
 	//test performance before you use lockless to make sure
 //test performance before and after
@@ -74,6 +77,9 @@ Description:
 	//Wait-free: Making sure that no thread is waiting to make progress
 	//For the rest of this tutorial I will not point out the differences, since to truly due this right, you need to do both at the same time
 	//It is good to know the differences
+
+void func1();
+void func2();
 
 int main()
 {
@@ -131,6 +137,9 @@ int main()
 		//http://preshing.com/20120913/acquire-and-release-semantics/
 		//http://preshing.com/20130823/the-synchronizes-with-relation/
 		//http://cellperformance.beyond3d.com/articles/index.html
+		//http://preshing.com/20120612/an-introduction-to-lock-free-programming/
+
+	//http://stackoverflow.com/questions/1147904/x86-equivalent-for-lwarx-and-stwcx
 
 	//What are acquire and release semantics?
 	//How to use the atomic library?
@@ -145,6 +154,37 @@ int main()
 
 	//addToLL();
 
+
+	//This queue is written to work on x86 architecture, compiled using the Visual Studio 2013 compiler
+		//There are no quarantees that this will work or at the least work locklessly on other architectures and with other compilers
+		//The below is also created for having a single consumer and a single producer thread, there are no guarantees that it will work beyond that
+	SPSCQueue* queue = new SPSCQueue;
+	queue->enqueue(0);
+	queue->enqueue(1);
+	queue->enqueue(2);
+	queue->enqueue(3);
+	queue->enqueue(4);
+	queue->enqueue(5);
+
+	delete queue;
+
+	std::thread consumer(func1);
+	std::thread producer(func2);
+
+	consumer.detach();
+	producer.detach();
+
+
 	getchar();
 	return 0;
+}
+
+void func1()
+{
+	//s
+}
+
+void func2()
+{
+	//s
 }

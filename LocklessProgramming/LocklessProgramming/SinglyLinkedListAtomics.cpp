@@ -5,8 +5,8 @@ static slist l;
 //need to work on
 void slist::push(int val)
 {
-	Node* temp = head;
-	Node* newNode = new Node{ val, temp };
+	NodeN* temp = head;
+	NodeN* newNode = new NodeN{ val, temp };
 
 	while (!head.compare_exchange_weak(temp, newNode))
 	{
@@ -37,7 +37,7 @@ void addToLL()
 			threads[i].join();
 	}
 
-	Node* temp = l.head;
+	NodeN* temp = l.head;
 
 	for (int i = 0; i < l.size; i++)
 	{

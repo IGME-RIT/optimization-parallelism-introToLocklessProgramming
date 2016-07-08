@@ -39,6 +39,9 @@
     <ClCompile Include="MemoryOrderWithAtomics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SPSCQueue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClassDeclarations.h">
