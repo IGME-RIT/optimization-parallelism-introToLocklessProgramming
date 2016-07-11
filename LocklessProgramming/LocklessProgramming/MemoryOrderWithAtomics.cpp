@@ -38,7 +38,7 @@
 
 //Now lets talk about them
 
-static void fun()
+static void func()
 {
 	//Two atomic variables to use
 	static std::atomic<int> num1 = 1;

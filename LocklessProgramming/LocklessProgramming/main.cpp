@@ -78,8 +78,10 @@ Description:
 	//For the rest of this tutorial I will not point out the differences, since to truly due this right, you need to do both at the same time
 	//It is good to know the differences
 
-void func1();
-void func2();
+//void func1(SPSCQueue*);
+//void func2(SPSCQueue*);
+void func1(LockedSPSCQueue&);
+void func2(LockedSPSCQueue&);
 
 int main()
 {
@@ -96,32 +98,11 @@ int main()
 		//Non-Atomic Operations
 		//Reordering
 
-	//Atomic Vs Non-Atomic Operations
-		//A Atomic operation is an operation that takes a single cycle
-			//A cycle or instruction cycle is the process by which a computer retrieves a program instruction from its memory, determines what actions the instructions requires and carries out those actions
-				//https://en.wikipedia.org/wiki/Instruction_cycle
-			//Example: num = 1;
-				//This is a single store operation, thus making it atomic
-		//A non-atomic operation takes more than a single cycle
-			//Example: int temp = num + 1; num = temp;
-				//This first has a load operation on num. Then it stores temp into num.
-				//While the individual operations are atomic, the overall operation isn't atomic
-		//num++ may or may not be an atomic operation depending on the architecture
-
 	//How variables are stored
 
-	//Reordering - Used: https://msdn.microsoft.com/en-us/library/windows/desktop/ee418650(v=vs.85).aspx
-		//Reads and Writes do not always happen in the order that you have written them in your code
-		//Write-Release
-			//a thread writes some data and then writes to a flag that tells other threads that the data is ready
-		//Read-Acquire
-			//a thread reads from a flag and then reads some shared data if the flag says that the thread has acquired access to the shared data
-		//reads and writes can be reordered by the compiler or the CPU
-			//This doesn't appear on single threaded systems
+	//Used: https://msdn.microsoft.com/en-us/library/windows/desktop/ee418650(v=vs.85).aspx
 
-	//Read-Acquire and Write-Release Barriers
-	//Preventing Compiler Reordering
-	//Preventing CPU reordering
+	//Preventing Compiler and CPU Reordering
 	//Interlocked Functions and CPU Reordering
 	//Volatile Variables and Reordering
 
@@ -157,19 +138,25 @@ int main()
 
 	//This queue is written to work on x86 architecture, compiled using the Visual Studio 2013 compiler
 		//There are no quarantees that this will work or at the least work locklessly on other architectures and with other compilers
-		//The below is also created for having a single consumer and a single producer thread, there are no guarantees that it will work beyond that
-	SPSCQueue* queue = new SPSCQueue;
-	queue->enqueue(0);
-	queue->enqueue(1);
-	queue->enqueue(2);
-	queue->enqueue(3);
-	queue->enqueue(4);
-	queue->enqueue(5);
+		//The below is also created for having a single consumer thread and a single producer thread, there are no guarantees that it will work beyond that
+	//SPSCQueue* queue = new SPSCQueue(0);
+	//SPSCQueue queue(0);
+	//queue->enqueue(1);
+	//queue->enqueue(2);
+	//queue->enqueue(3);
+	//queue->enqueue(4);
+	//queue->enqueue(5);
 
-	delete queue;
+	////Node* tempHead = queue->front();
+	////Node* tempTail = queue->back();
 
-	std::thread consumer(func1);
-	std::thread producer(func2);
+	//delete queue;
+
+	LockedSPSCQueue queue(0);
+
+
+	std::thread consumer(func1, std::ref(queue));
+	std::thread producer(func2, std::ref(queue));
 
 	consumer.detach();
 	producer.detach();
@@ -179,12 +166,22 @@ int main()
 	return 0;
 }
 
-void func1()
+//void func1(SPSCQueue* q)
+//{}
+//void func2(SPSCQueue* q)
+//{}
+void func1(LockedSPSCQueue& q)
 {
-	//s
+	for (int i = 0; i < 100; ++i)
+	{
+		q.enqueue(i+1);
+	}
 }
-
-void func2()
+void func2(LockedSPSCQueue& q)
 {
-	//s
+	for (int i = 0; i < 10; ++i)
+	{
+		printf("Dequeued: %d\n", q.dequeue());
+		//std::this_thread::sleep_for(std::chrono::microseconds(1));
+	}
 }

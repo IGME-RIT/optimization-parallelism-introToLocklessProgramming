@@ -39,7 +39,7 @@ void addToLL()
 
 	NodeN* temp = l.head;
 
-	for (int i = 0; i < l.size; i++)
+	for (unsigned int i = 0; i < l.size; i++)
 	{
 		std::cout << "Value of Head Node: " << temp->value << std::endl;
 		temp = temp->next;

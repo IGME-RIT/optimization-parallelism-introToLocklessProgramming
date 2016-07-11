@@ -7,70 +7,125 @@
 
 //Need
 
-SPSCQueue::SPSCQueue()
+//A version of the constructor that initializes the list with a single node
+SPSCQueue::SPSCQueue(int data)
 {
-	head = nullptr;
-	tail = nullptr;
-	numNodes = 0;
+	Node* newNode = (Node*)malloc(sizeof(Node));
+	newNode->data = data;
+	newNode->next = nullptr;
+	head = newNode;
+	tail = newNode;
+	closing = false;
+	numNodes = 1;
 }
 
 SPSCQueue::~SPSCQueue()
 {
+	/*bool tempClosing = false;
+	if (!closing.compare_exchange_strong(tempClosing, true, std::memory_order_acq_rel, std::memory_order_relaxed))
+		return;*/
+
+	closing.store(true, std::memory_order_release);	//probably going to have issues, but might not
 	int temp = numNodes.load(std::memory_order_acquire);
 	for (int i = 0; i < temp; i++)
 	{
 		printf("Num: %d\n", dequeue());
 	}
+
+	Node* tempTail2 = back();
 	
 }
 
 
+Node* SPSCQueue::front()
+{
+	return head;
+}
+
+Node* SPSCQueue::back()
+{
+	return tail;
+}
+
+//Very heavily used: http://kukuruku.co/hub/cpp/lock-free-data-structures-introduction
+	//Will make some modifications
+
+//Also:
+	//https://www.research.ibm.com/people/m/michael/podc-1996.pdf
+
+	//So far,
+		//want to looks at the while loops and maybe make some changes
+		//does not deal with the case where dequeue can be called without anything in the queue
+
 bool SPSCQueue::enqueue(int data)
 {
-	if (numNodes == QUEUE_MAX)
+	if (numNodes.load(std::memory_order_acquire) == QUEUE_MAX)
 		return false;
 
 	Node* newNode = (Node*)malloc(sizeof(Node));
 	newNode->data = data;
 	newNode->next = nullptr;
-	newNode->prev = tail;
 	
+	Node* tempTail;
 
-
-	//the three below operations must be atoics
-	//Need to think over their memory ordering
-	
-	if (numNodes.load(std::memory_order_acquire) == 0)
+	//might want to make some changes to the loop
+	while (true)
 	{
-		head = newNode;
-	}
-	else
-	{
-		tail->next = newNode;
-	}
-	tail = newNode;
+		tempTail = tail.load(std::memory_order_acquire);
+		Node* tempNext = tempTail->next.load(std::memory_order_acquire);
+		if (tempNext != nullptr)
+		{
+			tail.compare_exchange_weak(tempTail, tempNext, std::memory_order_release, std::memory_order_relaxed);
+		}
 
+		Node* temp = nullptr;
+		if (tempTail->next.compare_exchange_strong(temp, newNode, std::memory_order_release, std::memory_order_relaxed))
+			break;
+	}
+
+	tail.compare_exchange_strong(tempTail, newNode, std::memory_order_acq_rel, std::memory_order_relaxed);
 	numNodes.fetch_add(1, std::memory_order_acq_rel);
-
 	return true;
 }
 
 int SPSCQueue::dequeue()
 {
-	Node* temp = head;
-	head = head->next;
-	if (numNodes > 1)
-		head->prev = nullptr;
+	Node* tempHead = nullptr;
+	Node* tempNext = nullptr;
+	
+	while (true)
+	{
+		tempHead = head.load(std::memory_order_acquire);
+		tempNext = tempHead->next.load(std::memory_order_acquire);
+		if (head.load(std::memory_order_relaxed) != tempHead)
+			continue;
 
-	//The above all need to be atomic and need to go off first
+		//if (tempNext == nullptr)
+		//	return NULL;	//queue only has one element
 
-	int tempData = temp->data;
-	numNodes--;
-	free(temp);
+
+		Node* tempTail = tail.load(std::memory_order_acquire);	//might place this somewhere else
+
+		//I really like the below, will go over in more detail
+			//not liking it so much anymore
+		if (tempHead == tempTail)
+		{
+			//Thread is needed to help enqueue
+			tail.compare_exchange_strong(tempTail, tempNext, std::memory_order_release, std::memory_order_relaxed);
+			continue;
+		}
+		if (head.compare_exchange_strong(tempHead, tempNext, std::memory_order_release, std::memory_order_relaxed))
+			break;
+	}
+
+	int tempData = tempHead->data;
+	numNodes.fetch_sub(1, std::memory_order_acq_rel);
+	free(tempHead);
+
 	return tempData;
 }
 
-uint32_t SPSCQueue::size()
+int SPSCQueue::size()
 {
 	return numNodes;
 }

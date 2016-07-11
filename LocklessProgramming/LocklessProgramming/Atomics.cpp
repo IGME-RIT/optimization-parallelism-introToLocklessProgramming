@@ -50,7 +50,7 @@ void Atomics::examples()
 	printf("Macro: %d\n", ATOMIC_INT_LOCK_FREE);
 
 	//seeding the rand() with the time
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 
 	//Just making a basic atomic variable called num
 	std::atomic<int> num;
@@ -176,15 +176,20 @@ void Atomics::examples()
 			//the strong version guarantees that this will happen
 			//the weak version may fail
 		//The parameters take a reference to a expected value, a desired value, memory order in case of expected value = current, memory in case of expected value != current
+		//They return a bool, true if it succeeded, false if it failed
 		//Example:
+			bool tempBool;
 			//Load num2 into temp2, since we need an expected value
 			int temp2 = num2.load(std::memory_order_acquire);
 			//print current value of temp2/num2
 			printf("Temp2: %d\n", temp2);
 			//Now try to compare and exchange
-			num2.compare_exchange_weak(temp2, 9, std::memory_order_acq_rel, std::memory_order_relaxed);
-			
-			num2.compare_exchange_strong(temp2, 9, std::memory_order_acq_rel, std::memory_order_relaxed);
+				//WE can hypothesize that the first loop will most likely work and that the second loop will not work and temp2 will be changed to the current value in num2(9)
+			tempBool = num2.compare_exchange_weak(temp2, 9, std::memory_order_acq_rel, std::memory_order_relaxed);
+			printf("tempBool After 1st CAS: %d\n", tempBool);
+
+			tempBool = num2.compare_exchange_strong(temp2, 10, std::memory_order_acq_rel, std::memory_order_relaxed);
+			printf("tempBool After 2nd CAS: %d\n", tempBool);
 			printf("Temp2 After 2nd CAS: %d\n", temp2);
 }
 
