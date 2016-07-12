@@ -70,7 +70,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ABAProblem.cpp" />
+    <ClCompile Include="LocklessProblems.cpp" />
     <ClCompile Include="AtomicOperations.cpp" />
     <ClCompile Include="Atomics.cpp" />
     <ClCompile Include="LockedSPSCQueue.cpp" />

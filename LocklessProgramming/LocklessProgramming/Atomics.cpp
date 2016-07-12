@@ -38,6 +38,10 @@ p.store(); - replaces the contained value with val*/
 	//you can call .is_lock_free() to check if the particular variable is lockfree
 		//Example: sharedNum.is_lock_free();
 
+//Another thing to remember an atomic object is also required not to be reordered, similar to how what volatile does
+
+//important: http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-manual-325462.pdf
+
 static void t1Fun();
 static void t2Fun();
 static void t1FunV2();
@@ -104,17 +108,7 @@ void Atomics::examples()
 	//which is finally functionally the same as
 		//Again the below operation has std::memory_order_seq_cst by default
 	num.fetch_add(1, std::memory_order_seq_cst);
-
-
-
-
-
-
-	//Now those last do have very slightly different assemblty instruction from the others, but overall it isn't that different???????????? need to just read more about
-
-
-
-
+	
 
 
 
@@ -191,6 +185,47 @@ void Atomics::examples()
 			tempBool = num2.compare_exchange_strong(temp2, 10, std::memory_order_acq_rel, std::memory_order_relaxed);
 			printf("tempBool After 2nd CAS: %d\n", tempBool);
 			printf("Temp2 After 2nd CAS: %d\n", temp2);
+
+
+
+
+	//Now that we have introduced some of the more advanced parts of std::atomics
+	//I thought it would be cool if we went through a bit about how they achieve atomicity
+
+	//Firstly, we have to show the test case:
+		//A basic store for a 32 bit unsigned int
+	uint32_t data1 = 0;
+	data1 = INT_MAX;	//INT_MAX = the max size of a 32 bit int
+	//The disassembly for "data1 = INT_MAX;":
+		//0016263D  mov dword ptr [data1],7FFFFFFFh
+		//A single line saying to move the double word(aka dword or 32 bits of data) into the memory place specified by ptr [data1]
+
+	//Secondly, I think it will be nice to show how a non atomic store operation looks like
+	uint64_t data2 = 0;
+	data2 = 0x100000002;
+	//The disassembly for "data2 = 0x100000002;":
+		/*
+		0016264D  mov dword ptr [data2],2  
+		00162654  mov dword ptr [ebp-48h],1
+		*/
+		//Now here we move two dwords into data 2, we have two do it across 2 registers,
+		//since this is x86 architecture, after all, remember a 64 bit int value's store and load is not guaranteed to be atomic 
+
+	std::atomic<uint64_t> data3 = 0;
+	data3.store(1000000000, std::memory_order_release);
+	//The disassembly for "data3.store(1000000000, std::memory_order_release);":
+		/*
+		00162667  push 3
+		00162669  push 0
+		0016266B  push 3B9ACA00h
+		00162670  lea  ecx,[data3]
+		00162673  call std::atomic_ullong::store (01519F1h)
+		*/
+		//Now here we have a lot of operations, but notice how there is no mov commands
+		//Everything is just pushing memory to the stack and loading the address of data3
+		//The store operation we care about is the bottom most assembly operation
+		//The bottom most operation just calls the function std::atomic_ullong::store
+			//This is the atomic store operation we were looking for and in true atomic fashion, it takes a single assembly instruction
 }
 
 

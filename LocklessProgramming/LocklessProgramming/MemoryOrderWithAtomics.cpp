@@ -4,6 +4,8 @@
 	//http://www.1024cores.net/
 	//http://moodycamel.com/blog/2013/a-fast-lock-free-queue-for-c++
 	//https://www.justsoftwaresolutions.co.uk/threading/intel-memory-ordering-and-c++-memory-model.html
+
+//This one is very good.
 	//https://bartoszmilewski.com/2008/12/01/c-atomics-and-memory-ordering/
 
 //Now lets talk about memory ordering in std::atomic
@@ -36,13 +38,15 @@
 	//they sync the various operations on the atomic objects with the other operations
 	//creating a point in execution where one must happen before the other, which is the point of these memory orders with C++11 atomic objects
 
+//They also act like fences and can create fences underneath the hood if used with an atomic object's member function
+
 //Now lets talk about them
 
 static void func()
 {
 	//Two atomic variables to use
-	static std::atomic<int> num1 = 1;
-	static std::atomic<int> num2 = 2;
+	std::atomic<int> num1 = 1;
+	std::atomic<int> num2 = 2;
 	int temp = 0;
 
 	//First let's cover - std::memory_order_release

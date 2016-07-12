@@ -33,9 +33,6 @@
     <ClCompile Include="MemoryOrder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ABAProblem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="MemoryOrderWithAtomics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -43,6 +40,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="LockedSPSCQueue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LocklessProblems.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

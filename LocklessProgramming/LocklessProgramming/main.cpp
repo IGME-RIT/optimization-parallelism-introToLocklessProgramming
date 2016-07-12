@@ -78,10 +78,13 @@ Description:
 	//For the rest of this tutorial I will not point out the differences, since to truly due this right, you need to do both at the same time
 	//It is good to know the differences
 
-//void func1(SPSCQueue*);
-//void func2(SPSCQueue*);
-void func1(LockedSPSCQueue&);
-void func2(LockedSPSCQueue&);
+void func1(SPSCQueue&);
+void func2(SPSCQueue&);
+void func1L(LockedSPSCQueue&);
+void func2L(LockedSPSCQueue&);
+
+bool isDone1 = false;
+bool isDone2 = false;
 
 int main()
 {
@@ -133,55 +136,68 @@ int main()
 	Atomics a;
 	a.examples();
 
-	//addToLL();
-
-
-	//This queue is written to work on x86 architecture, compiled using the Visual Studio 2013 compiler
-		//There are no quarantees that this will work or at the least work locklessly on other architectures and with other compilers
-		//The below is also created for having a single consumer thread and a single producer thread, there are no guarantees that it will work beyond that
-	//SPSCQueue* queue = new SPSCQueue(0);
-	//SPSCQueue queue(0);
-	//queue->enqueue(1);
-	//queue->enqueue(2);
-	//queue->enqueue(3);
-	//queue->enqueue(4);
-	//queue->enqueue(5);
-
-	////Node* tempHead = queue->front();
-	////Node* tempTail = queue->back();
-
-	//delete queue;
-
-	LockedSPSCQueue queue(0);
-
+	//LockedSPSCQueue queue(0);
+	SPSCQueue queue(0);
 
 	std::thread consumer(func1, std::ref(queue));
 	std::thread producer(func2, std::ref(queue));
+	/*std::thread consumer(func1L, std::ref(queue));
+	std::thread producer(func2L, std::ref(queue));*/
 
 	consumer.detach();
 	producer.detach();
+
+
+	while (!isDone1 || !isDone2){};
+
+	Node* front = queue.front();
+	Node* back = queue.back();
+
 
 
 	getchar();
 	return 0;
 }
 
-//void func1(SPSCQueue* q)
-//{}
-//void func2(SPSCQueue* q)
-//{}
-void func1(LockedSPSCQueue& q)
+void func1(SPSCQueue& q)
 {
-	for (int i = 0; i < 100; ++i)
+	for (int i = 0; i < 90; i++)
+	{
+		q.enqueue(i+1);
+	}
+	isDone1 = true;
+}
+void func2(SPSCQueue& q)
+{
+	for (int i = 0; i < q.size(); ++i)
+	{
+		printf("Dequeued: %d\n", q.dequeue());
+	}
+
+	//The below is merely for testing purposes
+	while (!isDone1){}
+	
+	int size = q.size();
+	for (int i = 0; i < size; ++i)
+	{
+		printf("Dequeued: %d\n", q.dequeue());
+	}
+	isDone2 = true;
+	printf("Done!");
+}
+void func1L(LockedSPSCQueue& q)
+{
+	for (int i = 0; i < 1000; ++i)
 	{
 		q.enqueue(i+1);
 	}
 }
-void func2(LockedSPSCQueue& q)
+void func2L(LockedSPSCQueue& q)
 {
-	for (int i = 0; i < 10; ++i)
+	for (int i = 0; i < 100; ++i)
 	{
 		printf("Dequeued: %d\n", q.dequeue());
 		//std::this_thread::sleep_for(std::chrono::microseconds(1));
 	}
+	printf("Done!");
 }

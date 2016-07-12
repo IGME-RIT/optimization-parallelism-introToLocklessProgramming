@@ -10,8 +10,6 @@ public:
 	void examples();
 };
 
-#define QUEUE_MAX 16
-
 struct Node
 {
 	int data;
@@ -22,6 +20,8 @@ struct Node
 class SPSCQueue
 {
 public:
+	std::atomic<bool> closing;
+	
 	//A constructor that takes in a value and makes sure the queue is initialized with a single element at creation
 	SPSCQueue(int data);
 	~SPSCQueue();
@@ -34,7 +34,6 @@ public:
 	Node* back();
 
 private:
-	std::atomic<bool> closing;
 	std::atomic<uint32_t> numNodes;
 	std::atomic<Node*> head;
 	std::atomic<Node*> tail;

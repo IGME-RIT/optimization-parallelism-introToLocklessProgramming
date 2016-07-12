@@ -3,6 +3,11 @@
 //No need for closing, since we can just query if LockedSPSCQueue is invalid inside the lock
 	//Need to think over this a bit
 
+//Here is a version of the lockless queue using mutexes
+//Here the slow down comes from the face that there is a single mutex
+	//Since it is supposed to single producer single consumer each thread should only be operating on seperate sides of the function
+	//under most cases the two threads should almost never intersect
+
 LockedSPSCQueue::LockedSPSCQueue(int data)
 {
 	LockedNode* temp = (LockedNode*)malloc(sizeof(LockedNode));
@@ -24,7 +29,7 @@ LockedSPSCQueue::~LockedSPSCQueue()	//can see issues with this, where one thread
 
 bool LockedSPSCQueue::enqueue(int data)
 {
-	LockedNode* newNode = (LockedNode*)malloc(sizeof(LockedNode));	//malloc, might cause issues(different threads saving and freeing memory in the heap)
+	LockedNode* newNode = (LockedNode*)malloc(sizeof(LockedNode));
 	newNode->data = data;
 	newNode->next = nullptr;
 
@@ -39,8 +44,10 @@ bool LockedSPSCQueue::enqueue(int data)
 
 int LockedSPSCQueue::dequeue()
 {
-	LockedNode* temp;
-	temp = head;	//Just make sure this is okay
+	LockedNode* temp = head;	//Just make sure this is okay
+
+	if (temp == nullptr)
+		return NULL;
 
 	mtx.lock();
 	head = head->next;
