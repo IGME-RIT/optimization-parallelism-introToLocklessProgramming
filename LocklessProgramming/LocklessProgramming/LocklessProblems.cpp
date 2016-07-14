@@ -23,6 +23,9 @@
 	//This is a major problem in CAS loops, since the CAS can't detect this behavior
 	//This is very important to keep in mind and make sure it can't happen
 
+	//Solution to the ABA Problem
+		//s
+
 //One final warning,
 	//Be very careful with Lockless Programming,
 		//since there are numerous stories of writing lockless code and it working fine for a while until the programmers happen upon a data race a month later or something

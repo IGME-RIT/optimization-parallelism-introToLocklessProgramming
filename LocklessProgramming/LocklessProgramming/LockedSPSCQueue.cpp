@@ -16,49 +16,80 @@ LockedSPSCQueue::LockedSPSCQueue(int data)
 
 	head = tail = temp;	//make sure this is ordered correctly, probably is
 }
-LockedSPSCQueue::~LockedSPSCQueue()	//can see issues with this, where one thread deletes the queue and the other thread tries to use it	
-										//double check locking? //do I actually care
+LockedSPSCQueue::~LockedSPSCQueue()
 {
+	//I locked the destructor, so that a thread may destroy the queue and something won't try to enqueue or anything like that while it is being destroyed
+	mtx.lock();
+	//Go through and destroy every node
 	for (int i = 0; i < numNodes; i++)
 	{
 		LockedNode* temp = head;
 		head = head->next;
 		free(temp);
 	}
+	mtx.unlock();
 }
 
 bool LockedSPSCQueue::enqueue(int data)
 {
+	//make the new node
 	LockedNode* newNode = (LockedNode*)malloc(sizeof(LockedNode));
 	newNode->data = data;
 	newNode->next = nullptr;
 
+	//Lock the critical section
 	mtx.lock();
-	tail->next = newNode;
+	//check if there is nothing in the queue and if so, set head equal to the newNode, else set tail->next to newNode
+	if (tail == nullptr)
+		head = newNode;
+	else
+		tail->next = newNode;
+
+	//update the tail node to the newNode
 	tail = newNode;
+	//increase the size of the queue
 	++numNodes;
 	mtx.unlock();
+	//unlock, because you are done
 
 	return true;
 }
 
 int LockedSPSCQueue::dequeue()
 {
-	LockedNode* temp = head;	//Just make sure this is okay
+	mtx.lock();
+	//Get a temporary version of the head node's pointer, so we can free it outside the mutex
+		//Looked like it was multiple assembly instructions
+		/*008399D4  mov eax,dword ptr [this]  
+		  008399D7  mov ecx,dword ptr [eax+8]  */
+	LockedNode* temp = head;
 
-	if (temp == nullptr)
+	//Check if there is nothing in the queue and if so return NULL
+	if (head == nullptr)
 		return NULL;
 
-	mtx.lock();
+	//Check if there is only one item in the queue and if so, set tail to a nullptr
+		//won't work for the case of head == tail == nullptr, since of the above if statement
+	if (head == tail)
+		tail = nullptr;
+
+	//set head to head's next node
+		//if head is the only node in the queue, then head->next will be a nullptr and so head will be set to nullptr
 	head = head->next;
+
+	//decrement the number of nodes
 	--numNodes;
 	mtx.unlock();
 
+	//save the data in a temporary variable
 	int data = temp->data;
+	//free the old head node
 	free(temp);
+	//return the data
 	return data;
 }
 
+//An encapsulation method that just returns the size
 int LockedSPSCQueue::size()
 {
 	return numNodes;

@@ -71,19 +71,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="LocklessProblems.cpp" />
-    <ClCompile Include="AtomicOperations.cpp" />
     <ClCompile Include="Atomics.cpp" />
     <ClCompile Include="LockedSPSCQueue.cpp" />
-    <ClCompile Include="Lockless.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="MemoryOrder.cpp" />
     <ClCompile Include="MemoryOrderWithAtomics.cpp" />
-    <ClCompile Include="SinglyLinkedListAtomics.cpp" />
     <ClCompile Include="SPSCQueue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClassDeclarations.h" />
-    <ClInclude Include="SinglyLinkedListAtomics.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

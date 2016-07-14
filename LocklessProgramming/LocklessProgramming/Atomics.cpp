@@ -222,7 +222,7 @@ void Atomics::examples()
 		00162673  call std::atomic_ullong::store (01519F1h)
 		*/
 		//Now here we have a lot of operations, but notice how there is no mov commands
-		//Everything is just pushing memory to the stack and loading the address of data3
+		//Everything is just pushing memory to the stack to pass into the store() function and loading the address of data3
 		//The store operation we care about is the bottom most assembly operation
 		//The bottom most operation just calls the function std::atomic_ullong::store
 			//This is the atomic store operation we were looking for and in true atomic fashion, it takes a single assembly instruction

@@ -25,7 +25,6 @@ Description:
 */
 
 #include "ClassDeclarations.h"
-#include "SinglyLinkedListAtomics.h"
 
 //Used:
 	//https://www.youtube.com/watch?v=lVBvHbJsg5Y
@@ -36,23 +35,13 @@ Description:
 	//https://msdn.microsoft.com/en-us/library/windows/desktop/ee418650(v=vs.85).aspx
 	//http://preshing.com/20120612/an-introduction-to-lock-free-programming/
 
-//Read:
-	//https://www.infoq.com/news/2014/10/cpp-lock-free-programming
-	//http://stackoverflow.com/questions/25199838/understanding-stdatomiccompare-exchange-weak-in-c11
-	//http://www.drdobbs.com/lock-free-data-structures/184401865
-	//http://www.cplusplus.com/reference/atomic/atomic/
-	//http://preshing.com/20111203/a-c-profiling-module-for-multithreaded-apis/
-
-
-//https://en.wikipedia.org/wiki/ABA_problem
-//http://www.gamedev.net/topic/667092-the-atomic-man-are-lockless-data-structures-really-worth-learning-about/
 
 //Before we start, it is important that you read the Introduction to Inline Assembly Tutorial, so you have a basic understanding of assembly
 	//It is important, so you can handle/check memory reordering in a real time context
 
 //Don't use lockless programming unless you NEED the performance and the scalability
 	//test performance before you use lockless to make sure
-//test performance before and after
+		//test performance before and after to make sure you actually got the performance boost you wanted
 
 //Order of Topics to Cover
 	//Atomic Operations - store, load and other things
@@ -65,18 +54,17 @@ Description:
 	//Lockless Data Structures
 		//needs work
 	//Reordering
-	//Read-Acquire and Write-Release Barriers
-	//Preventing Compiler Reordering
-	//Preventing CPU reordering
-	//Volatile Variables and Reordering
+	//Read-Acquire and Write-Release Barriers/Semantics
 
 //Need to work on this!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//Lockless or Lock-free vs Wait-free
+//Lockless or Lock-free vs Wait-free vs Blocking vs Non-Blocking
 //You will come across these 3 terms if you research lockless programming
-	//Lockless or Lock-free: Not using locks
-	//Wait-free: Making sure that no thread is waiting to make progress
-	//For the rest of this tutorial I will not point out the differences, since to truly due this right, you need to do both at the same time
-	//It is good to know the differences
+	//Used almost : https://www.justsoftwaresolutions.co.uk/threading/non_blocking_lock_free_and_wait_free.html
+	//Blocking - those algorithms or data structures that calls an operating system function that waits for an event to occur or a time period to elapse
+	//Non-Blocking - just those algorithms or data structures that don't block, all lock-free data structures or algorithms are Non-Blocking
+	//Lockless or Lock-free: if any thread that performs an operation on the data structure is suspended at any point during that operation then the other threads accessing the data structure must still be able to complete their tasks
+	//Wait-free: A data structure or algorithm that is lock-free and it can complete its operation in a bounded number of steps
+	//For the rest of this tutorial I will not talk about these, but it is good to know the differences
 
 void func1(SPSCQueue&);
 void func2(SPSCQueue&);
@@ -100,58 +88,42 @@ int main()
 	//Two Things We Need To Pay Attention to When Doing Lockless Programming
 		//Non-Atomic Operations
 		//Reordering
-
-	//How variables are stored
-
+	
 	//Used: https://msdn.microsoft.com/en-us/library/windows/desktop/ee418650(v=vs.85).aspx
 
-	//Preventing Compiler and CPU Reordering
-	//Interlocked Functions and CPU Reordering
-	//Volatile Variables and Reordering
-
-	//Fences/Memory Barrier vs Semaphore vs Mutexes
-		//http://stackoverflow.com/questions/10552085/difference-between-lock-memory-barrier-semaphore
-
-	//Dealing With Read-Modify-Write Operations
-		//http://preshing.com/20150402/you-can-do-any-kind-of-atomic-read-modify-write-operation/
-
-	//For more fun:
-		//http://preshing.com/20120930/weak-vs-strong-memory-models/
-		//http://preshing.com/20140709/the-purpose-of-memory_order_consume-in-cpp11/
-		//http://preshing.com/20120913/acquire-and-release-semantics/
-		//http://preshing.com/20130823/the-synchronizes-with-relation/
-		//http://cellperformance.beyond3d.com/articles/index.html
-		//http://preshing.com/20120612/an-introduction-to-lock-free-programming/
-
-	//http://stackoverflow.com/questions/1147904/x86-equivalent-for-lwarx-and-stwcx
-
+	
+	
 	//What are acquire and release semantics?
 	//How to use the atomic library?
 	//When to use fences?
 
-	//For debugging: http://preshing.com/20120522/lightweight-in-memory-logging/
 
 	//To have basic data types that are guaranteed to be a certain size, use: <cstdint>
-
+	
 	Atomics a;
 	a.examples();
 
-	//LockedSPSCQueue queue(0);
-	SPSCQueue queue(0);
+	//Now that we have gone over atomics and the basics of memory ordering with atomics, it is time to talk about Read-Modify-Write operations
+	//Dealing With Read-Modify-Write Operations
+		//http://preshing.com/20150402/you-can-do-any-kind-of-atomic-read-modify-write-operation/
 
-	std::thread consumer(func1, std::ref(queue));
-	std::thread producer(func2, std::ref(queue));
-	/*std::thread consumer(func1L, std::ref(queue));
-	std::thread producer(func2L, std::ref(queue));*/
+	LockedSPSCQueue queue(0);
+	//SPSCQueue queue(0);
 
-	consumer.detach();
+	/*std::thread producer(func1, std::ref(queue));
+	std::thread consumer(func2, std::ref(queue));*/
+	std::thread consumer(func1L, std::ref(queue));
+	std::thread producer(func2L, std::ref(queue));
+
 	producer.detach();
+	consumer.detach();
+	
 
 
 	while (!isDone1 || !isDone2){};
 
-	Node* front = queue.front();
-	Node* back = queue.back();
+	//Node* front = queue.front();
+	//Node* back = queue.back();
 
 
 
@@ -169,16 +141,7 @@ void func1(SPSCQueue& q)
 }
 void func2(SPSCQueue& q)
 {
-	for (int i = 0; i < q.size(); ++i)
-	{
-		printf("Dequeued: %d\n", q.dequeue());
-	}
-
-	//The below is merely for testing purposes
-	while (!isDone1){}
-	
-	int size = q.size();
-	for (int i = 0; i < size; ++i)
+	for (int i = 0; i < 91; ++i)
 	{
 		printf("Dequeued: %d\n", q.dequeue());
 	}
@@ -201,3 +164,6 @@ void func2L(LockedSPSCQueue& q)
 	}
 	printf("Done!");
 }
+
+//Here is a resource for debugging multithreaded code:
+	//http://preshing.com/20120522/lightweight-in-memory-logging/

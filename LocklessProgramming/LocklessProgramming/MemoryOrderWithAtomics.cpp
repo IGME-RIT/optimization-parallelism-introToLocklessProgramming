@@ -26,8 +26,6 @@
 		//for consume and acquire loads, these store operations are considered releasing operations
 		//All C++11 Atomics use this as the default
 
-//This can be
-
 //The really important ones are below:
 	//std::memory_order_acquire
 	//std::memory_order_release
@@ -68,11 +66,7 @@ static void func()
 		//Example:
 			num1.compare_exchange_strong(temp, 1, std::memory_order_acq_rel, std::memory_order_relaxed);
 			//Since compare_exchange_strong() both has to load, compare, and then swap information it probably should have a memory ordering std::memory_order_acq_rel for the success state, since there is a load and store there
-
-
-	//Is the below true????
-				//Pretty sure
-
+			
 	//Lets cover the easiest one to talk about - std::memory_order_relaxed
 		//This memory order literally means that you don't care about that atomics memory ordering
 		//This is useful when you already have an atomic with a memory ordering that already prevents the current atomic from being reodered
@@ -80,6 +74,12 @@ static void func()
 			temp = num1.load(std::memory_order_relaxed);
 			temp = num2.load(std::memory_order_acquire);
 			//There is no reason to put std::memory_order_acquire on num1's load, since num2's load guarantees that num2's load will happen once all accesses to memory have happened (aka num1's load)
+		//Another example
+			temp = num1.load(std::memory_order_relaxed);
+			num1.compare_exchange_strong(temp, 20, std::memory_order_acq_rel, std::memory_order_relaxed);
+			num2.store(3, std::memory_order_relaxed);
+			//Notice how we give the compare_exchange_strong() the memory order acq_rel, but everything else is relaxed
+				//We do this since the compare_exchange_strong() function having the acq_rel order makes it so that all loads can not be reordered after it and no stores can be reordered before it
 
 	//Overall the above is showing off the acquire and release semantics
 	//To see how to use them in action: http://preshing.com/20121019/this-is-why-they-call-it-a-weakly-ordered-cpu/
