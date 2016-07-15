@@ -71,9 +71,6 @@ void func2(SPSCQueue&);
 void func1L(LockedSPSCQueue&);
 void func2L(LockedSPSCQueue&);
 
-bool isDone1 = false;
-bool isDone2 = false;
-
 int main()
 {
 	//What is lock-Free programming?
@@ -84,49 +81,47 @@ int main()
 	//Should you use lockless programming?
 		//Not unless you absolutely need the performance
 		//Lockless is very complex and requires a good understand of the cache, your architecture, and other things
+		//A lot of the time using mutexes can be much easier
+	
+	//What is good about Lockless Programming?
+		//if done well, it can be very quick
+		//Does not have most of the issues that come from using mutexes (deadlock, livelock, etc.)
 
 	//Two Things We Need To Pay Attention to When Doing Lockless Programming
 		//Non-Atomic Operations
-		//Reordering
+		//Memory Reordering
 	
 	//Used: https://msdn.microsoft.com/en-us/library/windows/desktop/ee418650(v=vs.85).aspx
 
-	
-	
-	//What are acquire and release semantics?
-	//How to use the atomic library?
-	//When to use fences?
-
-
 	//To have basic data types that are guaranteed to be a certain size, use: <cstdint>
 	
+
+	//Now lets start with std::atomics
 	Atomics a;
 	a.examples();
+
+	//Now lets go to MemoryOrderWithAtomics.cpp
 
 	//Now that we have gone over atomics and the basics of memory ordering with atomics, it is time to talk about Read-Modify-Write operations
 	//Dealing With Read-Modify-Write Operations
 		//http://preshing.com/20150402/you-can-do-any-kind-of-atomic-read-modify-write-operation/
 
-	LockedSPSCQueue queue(0);
-	//SPSCQueue queue(0);
+	//Now before we continue to an example of a Lockless Queue, look at the LocklessProblems.cpp
 
-	/*std::thread producer(func1, std::ref(queue));
-	std::thread consumer(func2, std::ref(queue));*/
-	std::thread consumer(func1L, std::ref(queue));
-	std::thread producer(func2L, std::ref(queue));
+	//Finally lets show an example of a Lockless Queue
+	//I have also created a similar version of the lockless queue that uses locks
 
-	producer.detach();
-	consumer.detach();
+	SPSCQueue queue(0);
+	//LockedSPSCQueue queue(0);
+
+	std::thread producer(func1, std::ref(queue));
+	std::thread consumer(func2, std::ref(queue));
+	/*std::thread consumer(func1L, std::ref(queue));
+	std::thread producer(func2L, std::ref(queue));*/
+
+	producer.join();
+	consumer.join();
 	
-
-
-	while (!isDone1 || !isDone2){};
-
-	//Node* front = queue.front();
-	//Node* back = queue.back();
-
-
-
 	getchar();
 	return 0;
 }
@@ -137,7 +132,6 @@ void func1(SPSCQueue& q)
 	{
 		q.enqueue(i+1);
 	}
-	isDone1 = true;
 }
 void func2(SPSCQueue& q)
 {
@@ -145,7 +139,6 @@ void func2(SPSCQueue& q)
 	{
 		printf("Dequeued: %d\n", q.dequeue());
 	}
-	isDone2 = true;
 	printf("Done!");
 }
 void func1L(LockedSPSCQueue& q)
@@ -167,3 +160,5 @@ void func2L(LockedSPSCQueue& q)
 
 //Here is a resource for debugging multithreaded code:
 	//http://preshing.com/20120522/lightweight-in-memory-logging/
+
+//This is it. This gives the basics for Lockless multithreaded code
