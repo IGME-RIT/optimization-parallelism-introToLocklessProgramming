@@ -38,10 +38,14 @@ Description:
 
 //Before we start, it is important that you read the Introduction to Inline Assembly Tutorial, so you have a basic understanding of assembly
 	//It is important, so you can handle/check memory reordering in a real time context
+//One other thing before we start is that just like all the other tutorials, we are assuming that you are using Visual Studio 2013 and its compiler	
 
 //Don't use lockless programming unless you NEED the performance and the scalability
 	//test performance before you use lockless to make sure
-		//test performance before and after to make sure you actually got the performance boost you wanted
+	//Double check if there is another way to do it without using lockless programming
+		//Can you change your code to have less contension on the mutexes or speed it up in another way?
+	//test performance after to make sure you actually got the performance boost you wanted or needed
+		
 
 //Order of Topics to Cover
 	//Atomic Operations - store, load and other things
@@ -106,6 +110,52 @@ int main()
 	//Dealing With Read-Modify-Write Operations
 		//http://preshing.com/20150402/you-can-do-any-kind-of-atomic-read-modify-write-operation/
 
+	//Now lets talk about how to go about creating lockless code
+	//Well, in this tutorial or primary means of writing lockless programming will be the standard library atomic objects and smart programming
+		//this tutorial will assume you are not using volatile or memory fences, since standard library atomics deal with the same issues those deal
+	//But, we'll get to that later
+	//A lot of the time people create lockless code by creating lockless data structures that handle operations between threads
+	//Lets use a queue to discuss this, obviously the queue is an example
+		//You create the queue and make it so that its various functions control the queue
+		//What are various queue functions:
+			//enqueue
+			//dequeue
+			//size <- just a getter for the size of the queue
+		//Those are the basic functions and any others would be custom to your implementation
+		//Now what functions could there possibly be contension issues?
+			//Now in some data structures only certain functions could possibly cause contention
+			//In this case though, all functions have a possibility of creating tension
+		//Lets talk through each function and talk about possible places of contention
+			//size
+				//the contention comes from the fact that the internal size variable could be changed by both the enqueue and the dequeue functions
+			//enqueue
+				//Now for this there are a few places of contention
+					//adding to the queue inherently can involve cases of contention
+						//Now this really depends on the implementation of your queue and what restrictions you put on the threads' use of this function
+							//Example of implementations: your queue can internally be an array or maybe a singly linked list
+							//Example of restrictions: only one thread may ever enqueue
+						//Example of contention: two threads try to enqueue at the same time
+					//editing the classes internal size variable, since this can be accessed and changed by other functions
+			//dequeue
+				//Now for this there are a few places of contention
+					//deleting from the queue inherently can involve cases of contention
+						//Now this really depends on the implementation of your queue and what restrictions you put on the threads' use of this function
+							//Example of implementations: your queue can internally be an array or maybe a singly linked list
+							//Example of restrictions: only one thread may ever enqueue
+						//Example of contention: two threads try to dequeue at the same time
+					//editing the classes internal size variable, since this can be accessed and changed by other functions
+
+	//Now see how many places there could be contention it is time to talk about what to do about it
+	//Now that we know where the contention is the next thing is to see what variables we need to make atomic	<- This is where we start assuming the use of standard library atomics
+		//These will tend to be the variables that will be used in multiple functions in the data structure
+			//It also depends on if there reads and writes are atomic
+			//Also depends on whether you need to prevent memory reordering of the variable
+	//Once you know what variables are needed to be atomic, make it atomic and apply the appropriate memory ordering to the various atomic functions (fetch_add(), exchange(), etc.)
+	//Now here is where I can't truly give a concrete step but more of a consideration
+		//Consider where you can make temporary variables to mess with instead of dealing with the atomic variable
+		//This is important, since you can make changes to the temporary variable without affecting the original
+		//Then when you want to change the original variable, you can use the compare_exchange_strong()
+
 	//Now before we continue to an example of a Lockless Queue, look at the LocklessProblems.cpp
 
 	//Finally lets show an example of a Lockless Queue
@@ -161,4 +211,7 @@ void func2L(LockedSPSCQueue& q)
 //Here is a resource for debugging multithreaded code:
 	//http://preshing.com/20120522/lightweight-in-memory-logging/
 
-//This is it. This gives the basics for Lockless multithreaded code
+//This is it. This gives the basics for Lockless multithreaded code using standard library atomics.
+//Now one last point. This is not all there is to Lockless Programming. It is honestly just the surface.
+//Remember Lockless Programming is the use of specific programming techniques and lower level synchronization objects to prevent code from locking up your program.
+	//This includes memory barriers, semaphores, atomics, and more.
